@@ -1,22 +1,20 @@
 const express = require('express');
-const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
-const logger = require('./services/logger.service');
-const PORT = process.env.PORT || 3030;
+const expressSession = require('express-session');
 
 const app = express();
 const http = require('http').createServer(app);
 
-app.use(
-  session({
-    secret: 'this-is-a-secret-that-belongs-to-Tal',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false },
-  })
-);
-app.use(express.static('public'));
+// Express App Config
+const session = expressSession({
+  secret: 'coding is amazing',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false },
+});
+app.use(express.json());
+app.use(session);
 
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.resolve(__dirname, 'public')));
@@ -33,13 +31,21 @@ if (process.env.NODE_ENV === 'production') {
   app.use(cors(corsOptions));
 }
 
-app.use(express.json());
+const authRoutes = require('./api/auth/auth.routes');
+const userRoutes = require('./api/user/user.routes');
+const shopRoutes = require('./api/shop/shop.routes');
+const reviewRoutes = require('./api/review/review.routes');
+const { connectSockets } = require('./services/socket.service');
 
-//API server routes
-const bugRouts = require('./api/bug/routes');
+// routes
 const setupAsyncLocalStorage = require('./middlewares/setupAls.middleware');
 app.all('*', setupAsyncLocalStorage);
-app.use('/api/bug', bugRouts);
+
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/shop', shopRoutes);
+app.use('/api/review', reviewRoutes);
+connectSockets(http, session);
 
 // Make every server-side-route to match the index.html
 // so when requesting http://localhost:3030/index.html/car/123 it will still respond with
@@ -48,4 +54,8 @@ app.get('/**', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-http.listen(PORT, () => logger.info('Server is running on port: ' + PORT));
+const logger = require('./services/logger.service');
+const port = process.env.PORT || 3030;
+http.listen(port, () => {
+  logger.info('Server is running on port: ' + port);
+});
