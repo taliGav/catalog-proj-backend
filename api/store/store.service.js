@@ -16,9 +16,11 @@ async function query(filterBy = {}) {
 }
 
 async function getById(storeId) {
+  console.log('storeId', storeId);
   try {
     const collection = await dbService.getCollection('store');
     const store = collection.findOne({ '_id': ObjectId(storeId) });
+    console.log('store', store);
     return store;
   } catch (err) {
     logger.error(`while finding store ${storeId}`, err);

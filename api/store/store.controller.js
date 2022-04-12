@@ -15,6 +15,7 @@ async function getStores(req, res) {
 
 // GET BY ID
 async function getStoreById(req, res) {
+  console.log('req.body._id', req.params.id);
   try {
     const storeId = req.params.id;
     const store = await storeService.getById(storeId);
